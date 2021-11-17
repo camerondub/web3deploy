@@ -45,7 +45,7 @@ def deploy():
             "WEB3_SOLC_VER=0.8.9\n"
             "WEB3_BUILD_DIR=build/web3deploy\n"
             "WEB3_HTTP_PROVIDER=http://localhost:8545\n"
-            "WEB3_POA=False\n"
+            "WEB3_POA=True\n"
             "WEB3_KEY_INDEX=0\n"
         )
         return
