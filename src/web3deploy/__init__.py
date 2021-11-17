@@ -20,7 +20,6 @@ def _get_contract_names(files):
             m = re.search(r"contract (\w[\w\d]+) (is|\{)", srccode)
             if m:
                 names.append(m.group(1))
-    rlog.info(f"found contract names: {names}")
     return names
 
 
@@ -94,9 +93,10 @@ def deploy():
     w3.eth.default_account = w3.eth.accounts[config("WEB3_KEY_INDEX", cast=int, default=0)]
 
     address_dct = {}
+    local_contract_names = _get_contract_names(contract_files)
     for contract_id, contract_interface in compiled_contracts.items():
         contract_name = contract_id.split(":")[-1]
-        if contract_name in _get_contract_names(contract_files):
+        if contract_name in local_contract_names:
             contract = w3.eth.contract(
                 abi=contract_interface["abi"], bytecode=contract_interface["bin"]
             )
