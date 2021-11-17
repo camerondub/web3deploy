@@ -32,7 +32,7 @@ def deploy():
     if args.envdesc:
         print(
             "WEB3_SOL_SRCDIR: dir containing solidity contract files (src/sol)\n"
-            "WEB3_SOLC_VER: desired solc compiler version (0.8.10)\n"
+            "WEB3_SOLC_VER: desired solc compiler version (0.8.9)\n"
             "WEB3_BUILD_DIR: destination dir for build artifacts (./build/web3deploy)\n"
             "WEB3_HTTP_PROVIDER: host/port for eth client json-rpc interface (http://localhost:8545)\n"
             "WEB3_POA: enable proof-of-authority metadata (True)\n"
@@ -62,7 +62,7 @@ def deploy():
     compiled_contracts = solcx.compile_files(
         contract_files,
         import_remappings=remappings,
-        solc_version=config("WEB3_SOLC_VER", default="0.8.10"),
+        solc_version=config("WEB3_SOLC_VER", default="0.8.9"),
         base_path=os.getcwd(),
         allow_paths=os.getcwd(),
     )
