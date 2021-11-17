@@ -68,14 +68,17 @@ def deploy():
     }
     compiler_ver = config("WEB3_SOLC_VER", default="0.8.9")
     rlog.info(f"optimize={bool(args.optimize)}, runs={args.optimize} {compiler_ver=}")
+    if args.optimize:
+        optimize_kwargs = {"optimize": bool(args.optimize), "optimize_runs": args.optimize}
+    else:
+        optimize_kwargs = {}
     compiled_contracts = solcx.compile_files(
         contract_files,
         import_remappings=remappings,
         solc_version=compiler_ver,
         base_path=os.getcwd(),
         allow_paths=os.getcwd(),
-        optimize=bool(args.optimize),
-        optimize_runs=args.optimize,
+        **optimize_kwargs,
     )
 
     # write output abi to build files
