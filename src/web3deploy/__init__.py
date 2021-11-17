@@ -93,7 +93,7 @@ def deploy():
             tx_hash = contract.constructor().transact()
             tx_receipt = w3.eth.wait_for_transaction_receipt(tx_hash)
             address_dct[contract_name] = tx_receipt.contractAddress
-            rlog.info(f"contract: {tx_receipt.contractAddress}")
+            rlog.info(f"contract {contract_name}: {tx_receipt.contractAddress}")
 
     # save contract deploy data to disk
     with open(f"{contract_dir}/deploy.json", "w") as f:
