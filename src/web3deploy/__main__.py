@@ -1,3 +1,3 @@
-from . import main
+from . import deploy
 
-main()
+deploy()

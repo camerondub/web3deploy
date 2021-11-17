@@ -2,6 +2,7 @@ import argparse
 import glob
 import json
 import os
+import re
 
 import rlog
 import solcx
@@ -10,7 +11,45 @@ from web3 import Web3
 from web3.middleware import geth_poa_middleware
 
 
-def main():
+def _get_contract_names(src_dir):
+    """get all solidity contract names present in src_dir"""
+    names = []
+    for srcfile in glob.glob(f"{src_dir}/*.sol"):
+        with open(srcfile, "r") as f:
+            srccode = f.read()
+            m = re.search(r"contract (\w+) is", srccode)
+            names.append(m.group(1))
+
+    return names
+
+
+def deploy():
+    # check for help flag
+    parser = argparse.ArgumentParser(description="deploy solidity contracts through json-rpc")
+    parser.add_argument("--envdesc", action="store_true")
+    parser.add_argument("--env", action="store_true")
+    args = parser.parse_args()
+    if args.envdesc:
+        print(
+            "WEB3_SOL_SRCDIR: dir containing solidity contract files (src/sol)\n"
+            "WEB3_SOLC_VER: desired solc compiler version (0.8.10)\n"
+            "WEB3_BUILD_DIR: destination dir for build artifacts (./build/web3deploy)\n"
+            "WEB3_HTTP_PROVIDER: host/port for eth client json-rpc interface (http://localhost:8545)\n"
+            "WEB3_POA: enable proof-of-authority metadata (True)\n"
+            "WEB3_KEY_INDEX: account index to use from provider (0)\n"
+        )
+        return
+    if args.env:
+        print(
+            "WEB3_SOL_SRCDIR=src/sol\n"
+            "WEB3_SOLC_VER=0.8.10\n"
+            "WEB3_BUILD_DIR=build/web3deploy\n"
+            "WEB3_HTTP_PROVIDER=http://localhost:8545\n"
+            "WEB3_POA=False\n"
+            "WEB3_KEY_INDEX=0\n"
+        )
+        return
+
     # locate contract files in package directory
     sol_src_dir = config("WEB3_SOL_SRCDIR", default="src/sol")
     contract_files = glob.glob(f"{sol_src_dir}/*.sol")
@@ -36,17 +75,17 @@ def main():
         json.dump(compiled_contracts, f)
 
     # deploy contract across web3
-    w3 = Web3(Web3.HTTPProvider(config("WEB3_HTTP_PROVIDER")))
+    w3 = Web3(Web3.HTTPProvider(config("WEB3_HTTP_PROVIDER", default="http://localhost:8545")))
 
     if config("WEB3_POA", default=False):
         rlog.info("Injecting geth_poa_middleware")
         w3.middleware_onion.inject(geth_poa_middleware, layer=0)
-    w3.eth.default_account = w3.eth.accounts[config("WEB3_KEY_INDEX", cast=int)]
+    w3.eth.default_account = w3.eth.accounts[config("WEB3_KEY_INDEX", cast=int, default=0)]
 
     address_dct = {}
     for contract_id, contract_interface in compiled_contracts.items():
         contract_name = contract_id.split(":")[-1]
-        if contract_name == config("WEB3_CONTRACT_NAME"):
+        if contract_name in _get_contract_names(sol_src_dir):
             contract = w3.eth.contract(
                 abi=contract_interface["abi"], bytecode=contract_interface["bin"]
             )
