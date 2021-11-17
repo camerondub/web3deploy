@@ -59,6 +59,8 @@ def deploy():
     else:
         contract_files = glob.glob(f"{sol_src_dir}/*.sol")
 
+    rlog.info(f"{contract_files =}")
+
     # compile contract files
     remappings = {
         "@openzeppelin": "node_modules/@openzeppelin",
