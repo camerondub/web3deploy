@@ -17,8 +17,9 @@ def _get_contract_names(src_dir):
     for srcfile in glob.glob(f"{src_dir}/*.sol"):
         with open(srcfile, "r") as f:
             srccode = f.read()
-            m = re.search(r"contract (\w[\w0-9]+) is", srccode)
-            names.append(m.group(1))
+            m = re.search(r"contract (\w[\w\d]+) is", srccode)
+            if m:
+                names.append(m.group(1))
 
     return names
 
