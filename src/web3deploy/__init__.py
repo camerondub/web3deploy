@@ -30,6 +30,7 @@ def deploy():
     parser.add_argument("--envdesc", "-d", action="store_true")
     parser.add_argument("--env", "-e", action="store_true")
     parser.add_argument("--files", "-f", nargs="*")
+    parser.add_argument("--optimize", "-o", nargs="?", type=int, default=0, const=200)
     args = parser.parse_args()
     if args.envdesc:
         print(
@@ -66,12 +67,15 @@ def deploy():
         "@openzeppelin": "node_modules/@openzeppelin",
         "@chainlink": "node_modules/@chainlink",
     }
+    rlog.info(f"optimize={bool(args.optimize)}, runs={args.optimize}")
     compiled_contracts = solcx.compile_files(
         contract_files,
         import_remappings=remappings,
         solc_version=config("WEB3_SOLC_VER", default="0.8.9"),
         base_path=os.getcwd(),
         allow_paths=os.getcwd(),
+        optimize=bool(args.optimize),
+        optimize_runs=args.optimize,
     )
 
     # write output abi to build files
