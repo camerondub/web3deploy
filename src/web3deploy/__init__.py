@@ -17,7 +17,7 @@ def _get_contract_names(src_dir):
     for srcfile in glob.glob(f"{src_dir}/*.sol"):
         with open(srcfile, "r") as f:
             srccode = f.read()
-            m = re.search(r"contract (\w[\w\d]+) is", srccode)
+            m = re.search(r"contract (\w[\w\d]+) (is)|\{", srccode)
             if m:
                 names.append(m.group(1))
 
@@ -29,14 +29,14 @@ def deploy():
     parser = argparse.ArgumentParser(description="deploy solidity contracts through json-rpc")
     parser.add_argument("--envdesc", "-d", action="store_true")
     parser.add_argument("--env", "-e", action="store_true")
-    parser.add_argument("--files", "-f", nargs='*')
+    parser.add_argument("--files", "-f", nargs="*")
     args = parser.parse_args()
     if args.envdesc:
         print(
             "WEB3_SOL_SRCDIR: dir containing solidity contract files (src/sol)\n"
             "WEB3_SOLC_VER: desired solc compiler version (0.8.9)\n"
             "WEB3_BUILD_DIR: destination dir for build artifacts (./build/web3deploy)\n"
-            "WEB3_HTTP_PROVIDER: host/port for eth client json-rpc interface (http://localhost:8545)\n"
+            "WEB3_HTTP_PROVIDER: url for eth client json-rpc interface (http://localhost:8545)\n"
             "WEB3_POA: enable proof-of-authority metadata (True)\n"
             "WEB3_KEY_INDEX: account index to use from provider (0)\n"
         )
@@ -58,7 +58,6 @@ def deploy():
         contract_files = args.files
     else:
         contract_files = glob.glob(f"{sol_src_dir}/*.sol")
-
 
     # compile contract files
     remappings = {
