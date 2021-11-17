@@ -17,7 +17,7 @@ def _get_contract_names(files):
     for srcfile in files:
         with open(srcfile, "r") as f:
             srccode = f.read()
-            m = re.search(r"contract (\w[\w\d]+) (is)|\{", srccode)
+            m = re.search(r"contract (\w[\w\d]+) (is|\{)", srccode)
             if m:
                 names.append(m.group(1))
     rlog.info(f"found contract names: {names}")
