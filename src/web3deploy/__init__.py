@@ -20,7 +20,7 @@ def _get_contract_names(files):
             m = re.search(r"contract (\w[\w\d]+) (is)|\{", srccode)
             if m:
                 names.append(m.group(1))
-    rlog.info("found contract names: {names}")
+    rlog.info(f"found contract names: {names}")
     return names
 
 
