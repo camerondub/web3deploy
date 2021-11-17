@@ -66,11 +66,12 @@ def deploy():
         "@openzeppelin": "node_modules/@openzeppelin",
         "@chainlink": "node_modules/@chainlink",
     }
-    rlog.info(f"optimize={bool(args.optimize)}, runs={args.optimize}")
+    compiler_ver = config("WEB3_SOLC_VER", default="0.8.9")
+    rlog.info(f"optimize={bool(args.optimize)}, runs={args.optimize} {compiler_ver=}")
     compiled_contracts = solcx.compile_files(
         contract_files,
         import_remappings=remappings,
-        solc_version=config("WEB3_SOLC_VER", default="0.8.9"),
+        solc_version=compiler_ver,
         base_path=os.getcwd(),
         allow_paths=os.getcwd(),
         optimize=bool(args.optimize),
