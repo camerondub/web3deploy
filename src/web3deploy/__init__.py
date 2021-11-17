@@ -27,8 +27,9 @@ def _get_contract_names(src_dir):
 def deploy():
     # check for help flag
     parser = argparse.ArgumentParser(description="deploy solidity contracts through json-rpc")
-    parser.add_argument("--envdesc", action="store_true")
-    parser.add_argument("--env", action="store_true")
+    parser.add_argument("--envdesc", "-d", action="store_true")
+    parser.add_argument("--env", "-e", action="store_true")
+    parser.add_argument("--files", "-f", nargs='*')
     args = parser.parse_args()
     if args.envdesc:
         print(
@@ -53,7 +54,11 @@ def deploy():
 
     # locate contract files in package directory
     sol_src_dir = config("WEB3_SOL_SRCDIR", default="src/sol")
-    contract_files = glob.glob(f"{sol_src_dir}/*.sol")
+    if args.files:
+        contract_files = args.files
+    else:
+        contract_files = glob.glob(f"{sol_src_dir}/*.sol")
+
 
     # compile contract files
     remappings = {
