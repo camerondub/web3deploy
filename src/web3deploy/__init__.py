@@ -42,7 +42,7 @@ def deploy():
     if args.env:
         print(
             "WEB3_SOL_SRCDIR=src/sol\n"
-            "WEB3_SOLC_VER=0.8.10\n"
+            "WEB3_SOLC_VER=0.8.9\n"
             "WEB3_BUILD_DIR=build/web3deploy\n"
             "WEB3_HTTP_PROVIDER=http://localhost:8545\n"
             "WEB3_POA=False\n"
