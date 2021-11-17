@@ -11,16 +11,15 @@ from web3 import Web3
 from web3.middleware import geth_poa_middleware
 
 
-def _get_contract_names(src_dir):
+def _get_contract_names(files):
     """get all solidity contract names present in src_dir"""
     names = []
-    for srcfile in glob.glob(f"{src_dir}/*.sol"):
+    for srcfile in files:
         with open(srcfile, "r") as f:
             srccode = f.read()
             m = re.search(r"contract (\w[\w\d]+) (is)|\{", srccode)
             if m:
                 names.append(m.group(1))
-
     return names
 
 
@@ -92,7 +91,7 @@ def deploy():
     address_dct = {}
     for contract_id, contract_interface in compiled_contracts.items():
         contract_name = contract_id.split(":")[-1]
-        if contract_name in _get_contract_names(sol_src_dir):
+        if contract_name in _get_contract_names(contract_files):
             contract = w3.eth.contract(
                 abi=contract_interface["abi"], bytecode=contract_interface["bin"]
             )
