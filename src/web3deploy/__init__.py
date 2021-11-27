@@ -11,16 +11,20 @@ from web3 import Web3
 from web3.middleware import geth_poa_middleware
 
 
+def _get_contract_name(srcfile):
+    """get singular contract name in singular solidity src file"""
+    with open(srcfile, "r") as f:
+        srccode = f.read()
+        m = re.search(r"contract (\w[\w\d]+) (is|\{)", srccode)
+        if m:
+            return m.group(1)
+        else:
+            raise KeyError("contract name regex unmatched")
+
+
 def _get_contract_names(files):
-    """get all solidity contract names present in src_dir"""
-    names = []
-    for srcfile in files:
-        with open(srcfile, "r") as f:
-            srccode = f.read()
-            m = re.search(r"contract (\w[\w\d]+) (is|\{)", srccode)
-            if m:
-                names.append(m.group(1))
-    return names
+    """get all solidity contract names present in files list"""
+    return [_get_contract_name(srcfile) for srcfile in files]
 
 
 def deploy():
