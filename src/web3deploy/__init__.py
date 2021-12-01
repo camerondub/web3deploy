@@ -86,7 +86,8 @@ def deploy():
     )
 
     # write output abi to build files
-    contract_dir = f"{config('WEB3_BUILD_DIR', default='build/web3deploy')}/contract"
+    build_dir = config("WEB3_BUILD_DIR", default="build/web3deploy")
+    contract_dir = f"{build_dir}/contract"
     if not os.path.exists(contract_dir):
         os.makedirs(contract_dir)
     with open(f"{contract_dir}/compile.json", "w") as f:
@@ -113,6 +114,15 @@ def deploy():
             address_dct[contract_name] = tx_receipt.contractAddress
             rlog.info(f"contract {contract_name}: {tx_receipt.contractAddress}")
 
+    # read existing address data into memory
+    try:
+        with open(f"{build_dir}/address.json", "r") as f:
+            old_address_dct = json.load(f)
+    except FileNotFoundError as e:
+        rlog.warning(f"address.json not found: {e}")
+
+    # TODO: merge old_address_dct into address_dct
+
     # save contract deploy data to disk
-    with open(f"{contract_dir}/deploy.json", "w") as f:
+    with open(f"{build_dir}/deploy.json", "w") as f:
         json.dump(address_dct, f)
