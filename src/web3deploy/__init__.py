@@ -30,6 +30,7 @@ def _get_contract_names(files):
 def deploy():
     # check for help flag
     parser = argparse.ArgumentParser(description="deploy solidity contracts through json-rpc")
+    parser.add_argument("--clear", "-c", action="store_true")
     parser.add_argument("--envdesc", "-d", action="store_true")
     parser.add_argument("--env", "-e", action="store_true")
     parser.add_argument("--files", "-f", nargs="*")
@@ -54,6 +55,15 @@ def deploy():
             "WEB3_POA=True\n"
             "WEB3_KEY_INDEX=0\n"
         )
+        return
+
+    build_dir = config("WEB3_BUILD_DIR", default="build/web3deploy")
+    contract_dir = f"{build_dir}/contract"
+    if args.clear:
+        try:
+            os.rmdir(contract_dir)
+        except Exception as e:
+            rlog.warning(f"error removing contract directory: {e}")
         return
 
     # locate contract files in package directory
@@ -86,8 +96,6 @@ def deploy():
     )
 
     # write output abi to build files
-    build_dir = config("WEB3_BUILD_DIR", default="build/web3deploy")
-    contract_dir = f"{build_dir}/contract"
     if not os.path.exists(contract_dir):
         os.makedirs(contract_dir)
     with open(f"{contract_dir}/compile.json", "w") as f:
