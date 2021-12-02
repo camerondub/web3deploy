@@ -141,5 +141,5 @@ def deploy():
     address_dct = old_address_dct | address_dct
 
     # save contract deploy data to disk
-    with open(f"{build_dir}/deploy.json", "w") as f:
+    with open(f"{build_dir}/address.json", "w") as f:
         json.dump(address_dct, f)
