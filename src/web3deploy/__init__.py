@@ -120,8 +120,10 @@ def deploy():
             old_address_dct = json.load(f)
     except FileNotFoundError as e:
         rlog.warning(f"address.json not found: {e}")
+        old_address_dct = {}
 
-    # TODO: merge old_address_dct into address_dct
+    # merge old_address_dct into address_dct
+    address_dct = old_address_dct | address_dct
 
     # save contract deploy data to disk
     with open(f"{build_dir}/deploy.json", "w") as f:
