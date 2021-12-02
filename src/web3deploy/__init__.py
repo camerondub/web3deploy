@@ -3,6 +3,7 @@ import glob
 import json
 import os
 import re
+import sys
 
 import rlog
 import solcx
@@ -22,12 +23,7 @@ def _get_contract_name(srcfile):
             raise KeyError("contract name regex unmatched")
 
 
-def _get_contract_names(files):
-    """get all solidity contract names present in files list"""
-    return [_get_contract_name(srcfile) for srcfile in files]
-
-
-def deploy():
+def _parse_cmdline():
     # check for help flag
     parser = argparse.ArgumentParser(description="deploy solidity contracts through json-rpc")
     parser.add_argument("--clear", "-c", action="store_true")
@@ -45,7 +41,7 @@ def deploy():
             "WEB3_POA: enable proof-of-authority metadata (True)\n"
             "WEB3_KEY_INDEX: account index to use from provider (0)\n"
         )
-        return
+        sys.exit(0)
     if args.env:
         print(
             "WEB3_SOL_SRCDIR=src/sol\n"
@@ -55,7 +51,7 @@ def deploy():
             "WEB3_POA=True\n"
             "WEB3_KEY_INDEX=0\n"
         )
-        return
+        sys.exit(0)
 
     build_dir = config("WEB3_BUILD_DIR", default="build/web3deploy")
     contract_dir = f"{build_dir}/contract"
@@ -64,7 +60,13 @@ def deploy():
             os.rmdir(contract_dir)
         except Exception as e:
             rlog.warning(f"error removing contract directory: {e}")
-        return
+        sys.exit(0)
+
+    return args
+
+
+def deploy():
+    args = _parse_cmdline()
 
     # locate contract files in package directory
     sol_src_dir = config("WEB3_SOL_SRCDIR", default="src/sol")
@@ -76,51 +78,18 @@ def deploy():
     rlog.info(f"{contract_files =}")
 
     # compile contract files
-    remappings = {
-        "@openzeppelin": "node_modules/@openzeppelin",
-        "@chainlink": "node_modules/@chainlink",
-    }
     compiler_ver = config("WEB3_SOLC_VER", default="0.8.9")
     rlog.info(f"optimize={bool(args.optimize)}, runs={args.optimize} {compiler_ver=}")
     if args.optimize:
         optimize_kwargs = {"optimize": bool(args.optimize), "optimize_runs": args.optimize}
     else:
         optimize_kwargs = {}
-    compiled_contracts = solcx.compile_files(
-        contract_files,
-        import_remappings=remappings,
-        solc_version=compiler_ver,
-        base_path=os.getcwd(),
-        allow_paths=os.getcwd(),
-        **optimize_kwargs,
-    )
 
-    # write output abi to build files
+    # ensure build directory is created
+    build_dir = config("WEB3_BUILD_DIR", default="build/web3deploy")
+    contract_dir = f"{build_dir}/contract"
     if not os.path.exists(contract_dir):
         os.makedirs(contract_dir)
-    with open(f"{contract_dir}/compile.json", "w") as f:
-        json.dump(compiled_contracts, f)
-
-    # deploy contract across web3
-    w3 = Web3(Web3.HTTPProvider(config("WEB3_HTTP_PROVIDER", default="http://localhost:8545")))
-
-    if config("WEB3_POA", default=False):
-        rlog.info("Injecting geth_poa_middleware")
-        w3.middleware_onion.inject(geth_poa_middleware, layer=0)
-    w3.eth.default_account = w3.eth.accounts[config("WEB3_KEY_INDEX", cast=int, default=0)]
-
-    address_dct = {}
-    local_contract_names = _get_contract_names(contract_files)
-    for contract_id, contract_interface in compiled_contracts.items():
-        contract_name = contract_id.split(":")[-1]
-        if contract_name in local_contract_names:
-            contract = w3.eth.contract(
-                abi=contract_interface["abi"], bytecode=contract_interface["bin"]
-            )
-            tx_hash = contract.constructor().transact()
-            tx_receipt = w3.eth.wait_for_transaction_receipt(tx_hash)
-            address_dct[contract_name] = tx_receipt.contractAddress
-            rlog.info(f"contract {contract_name}: {tx_receipt.contractAddress}")
 
     # read existing address data into memory
     try:
@@ -129,6 +98,44 @@ def deploy():
     except FileNotFoundError as e:
         rlog.warning(f"address.json not found: {e}")
         old_address_dct = {}
+
+    address_dct = {}
+    for contract_file in contract_files:
+        compiled_contract = solcx.compile_source(
+            contract_file,
+            solc_version=compiler_ver,
+            base_path=os.getcwd(),
+            allow_paths=os.getcwd(),
+            **optimize_kwargs,
+        )
+
+        # get contract name
+        contract_name = _get_contract_name(contract_file)
+
+        # write output abi to build files
+        with open(f"{contract_dir}/{contract_name}.json", "w") as f:
+            json.dump(compiled_contract, f)
+
+        # deploy contract across web3
+        w3 = Web3(
+            Web3.HTTPProvider(config("WEB3_HTTP_PROVIDER", default="http://localhost:8545"))
+        )
+
+        if config("WEB3_POA", default=False):
+            rlog.info("Injecting geth_poa_middleware")
+            w3.middleware_onion.inject(geth_poa_middleware, layer=0)
+        w3.eth.default_account = w3.eth.accounts[config("WEB3_KEY_INDEX", cast=int, default=0)]
+
+        for contract_id, contract_interface in compiled_contract.items():
+            section_name = contract_id.split(":")[-1]
+            if section_name == contract_name:
+                contract = w3.eth.contract(
+                    abi=contract_interface["abi"], bytecode=contract_interface["bin"]
+                )
+                tx_hash = contract.constructor().transact()
+                tx_receipt = w3.eth.wait_for_transaction_receipt(tx_hash)
+                address_dct[contract_name] = tx_receipt.contractAddress
+                rlog.info(f"contract {contract_name}: {tx_receipt.contractAddress}")
 
     # merge old_address_dct into address_dct
     address_dct = old_address_dct | address_dct
