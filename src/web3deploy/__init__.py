@@ -101,8 +101,8 @@ def deploy():
 
     address_dct = {}
     for contract_file in contract_files:
-        compiled_contract = solcx.compile_source(
-            contract_file,
+        compiled_contract = solcx.compile_files(
+            [contract_file],
             solc_version=compiler_ver,
             base_path=os.getcwd(),
             allow_paths=os.getcwd(),
