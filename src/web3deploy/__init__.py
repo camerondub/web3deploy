@@ -30,6 +30,7 @@ def _parse_cmdline():
     parser.add_argument("--envdesc", "-d", action="store_true")
     parser.add_argument("--env", "-e", action="store_true")
     parser.add_argument("--files", "-f", nargs="*")
+    parser.add_argument("--names", "-n", nargs="*")
     parser.add_argument("--optimize", "-o", nargs="?", type=int, default=0, const=200)
     args = parser.parse_args()
     if args.envdesc:
@@ -99,8 +100,13 @@ def deploy():
         rlog.warning(f"address.json not found: {e}")
         old_address_dct = {}
 
+    if args.names:
+        contract_names = args.names
+    else:
+        contract_names = [_get_contract_name(cfile) for cfile in contract_files]
+
     address_dct = {}
-    for contract_file in contract_files:
+    for contract_file, contract_name in zip(contract_files, contract_names):
         compiled_contract = solcx.compile_files(
             [contract_file],
             solc_version=compiler_ver,
@@ -108,9 +114,6 @@ def deploy():
             allow_paths=os.getcwd(),
             **optimize_kwargs,
         )
-
-        # get contract name
-        contract_name = _get_contract_name(contract_file)
 
         # write output abi to build files
         with open(f"{contract_dir}/{contract_name}.json", "w") as f:
